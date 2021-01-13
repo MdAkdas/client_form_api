@@ -1,4 +1,11 @@
 
+def validate_date_not_in_past(value):
+    today = datetime.date.today()
+   
+    if value < today:
+        raise ValidationError('date is in the past')
+
+
 #forms.py
 widgets = { 'days': forms.CheckboxSelectMultiple }
 
@@ -13,3 +20,11 @@ DAYS_OF_WEEK = (
 	)
 
 weekdaysOnly = models.BooleanField(default=True)	
+
+
+def validate_time_range(value):
+    minT = datetime.time(5,00,00)
+    maxT = datetime.time(9,00,00)
+
+    if value >maxT or value <minT:
+        raise ValidationError('Shift Time range is 5am to 9 am')

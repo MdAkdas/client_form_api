@@ -42,7 +42,7 @@ class UserManager(BaseUserManager):
 
 class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(max_length=254, unique=True)
-    name = models.CharField(max_length=254, null=True, blank=True)
+    name = models.CharField(max_length=254, null=True, blank=True, unique=True)
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
@@ -67,43 +67,26 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 
 
-def validate_date_not_in_past(value):
-    today = datetime.date.today()
-   
-    if value < today:
-        raise ValidationError('date is in the past')
-
-def validate_time_range(value):
-    minT = datetime.time(5,00,00)
-    maxT = datetime.time(8,00,00)
-
-    print(minT)
-    print(maxT)
-    print(value)
-
-    if value >maxT or value <minT:
-        raise ValidationError('Shift Time range is 5am to 9 am')
-
-
 
 class Shift(models.Model):
-    clientName = models.ForeignKey(User, related_name='shifts',on_delete=models.DO_NOTHING)
-    start_date=models.DateField(validators=[validate_date_not_in_past])
+    clientName = models.ForeignKey(User, related_name='shifts',null=True, on_delete=models.SET_NULL)
+    start_date=models.DateField()
 
-    arrival_time = models.TimeField(validators=[validate_time_range])
-    departure_time = models.TimeField(validators=[validate_time_range])
+    arrival_time = models.TimeField() #we can use validaters also validators=[validate_time_range]
+    departure_time = models.TimeField()
 
     REPEAT_SELECTION = (
         ('None',_('None')),
         ('Daily',_('Daily')),
         ('Weekly',_('Weekly')),
         )
-
     repeat = models.CharField(max_length=7,choices=REPEAT_SELECTION)
+    
     SHIFT_OPTION = (
         ("5am to 9am", "5am to 9am"),
         )
     shift_availability = models.CharField(max_length=10,choices=SHIFT_OPTION, default="5am to 9am")
+    
     DAYS_OF_WEEK = (
        ("Monday", "Monday"),
        ("Tuesday", "Tuesday"),
@@ -116,4 +99,23 @@ class Shift(models.Model):
     days = MultiSelectField(choices=DAYS_OF_WEEK)
     weekdaysOnly = models.BooleanField(default=True)
 
-    
+    def clean(self):
+        today = datetime.date.today()
+        if self.start_date < today:
+            raise ValidationError('date is in the past')
+
+        minT = datetime.time(5,00,00)
+        maxT = datetime.time(9,00,00)
+
+        if self.arrival_time >maxT or self.arrival_time <minT:
+            raise ValidationError('Shift Time range is 5am to 9 am')
+
+        if self.departure_time >maxT or self.departure_time <minT:
+            raise ValidationError('Shift Time range is 5am to 9 am')    
+
+        if self.arrival_time > self.departure_time:
+            raise ValidationError('Arrival Time must be before departure Time')
+        
+        if self.weekdaysOnly == True:
+            if "Saturday" in self.days or "Sunday" in self.days:
+                raise ValidationError('Weekdays Only Selected.')
