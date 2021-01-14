@@ -10,13 +10,6 @@ from .serializers import ShiftSerializer
 
 
 
-class HelloView(APIView):
-    permission_classes = (IsAuthenticated,)
-
-    def get(self, request):
-        content = {'message': 'Hello, World!'}
-        return Response(content)
-
 class Shifts(generics.ListAPIView):
 	permission_classes = (IsAuthenticated,)
 	
@@ -27,3 +20,5 @@ class CreateShift(generics.CreateAPIView):
 
 	permission_classes=(IsAuthenticated,)
 	serializer_class=ShiftSerializer
+
+	

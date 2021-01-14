@@ -67,13 +67,27 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 
 
+def validate_date_in_past(value):
+    today = datetime.date.today()
+    if value < today:
+        raise ValidationError('date is in the past')
+
+
+def validate_time_range(value):
+    minT = datetime.time(5,00,00)
+    maxT = datetime.time(9,00,00)
+
+    if value >maxT or value <minT:
+        raise ValidationError('Shift Time range is 5am to 9 am')
+
+
 
 class Shift(models.Model):
     clientName = models.ForeignKey(User, related_name='shifts',null=True, on_delete=models.SET_NULL)
-    start_date=models.DateField()
+    start_date=models.DateField(validators=[validate_date_in_past])
 
-    arrival_time = models.TimeField() #we can use validaters also validators=[validate_time_range]
-    departure_time = models.TimeField()
+    arrival_time = models.TimeField(validators=[validate_time_range]) #we can validate in clean method also
+    departure_time = models.TimeField(validators=[validate_time_range])
 
     REPEAT_SELECTION = (
         ('None',_('None')),
@@ -100,19 +114,6 @@ class Shift(models.Model):
     weekdaysOnly = models.BooleanField(default=True)
 
     def clean(self):
-        today = datetime.date.today()
-        if self.start_date < today:
-            raise ValidationError('date is in the past')
-
-        minT = datetime.time(5,00,00)
-        maxT = datetime.time(9,00,00)
-
-        if self.arrival_time >maxT or self.arrival_time <minT:
-            raise ValidationError('Shift Time range is 5am to 9 am')
-
-        if self.departure_time >maxT or self.departure_time <minT:
-            raise ValidationError('Shift Time range is 5am to 9 am')    
-
         if self.arrival_time > self.departure_time:
             raise ValidationError('Arrival Time must be before departure Time')
         

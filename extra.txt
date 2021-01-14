@@ -28,3 +28,6 @@ def validate_time_range(value):
 
     if value >maxT or value <minT:
         raise ValidationError('Shift Time range is 5am to 9 am')
+
+
+        
